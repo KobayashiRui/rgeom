@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "crates/rgeom",
+    "crates/io",
+    "examples/*",
+]
+
