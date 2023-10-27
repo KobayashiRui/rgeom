@@ -1,8 +1,8 @@
-[workspace]
+[package]
+name = "rgeom"
+version = "0.1.0"
+edition = "2021"
 
-members = [
-    "crates/rgeom",
-    "crates/io",
-    "examples/*",
-]
-
+[[example]]
+name = "half_edge_test"
+path = "examples/half_edge_test.rs"

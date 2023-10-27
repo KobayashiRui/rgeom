@@ -3,19 +3,5 @@
 version = 3
 
 [[package]]
-name = "file_load"
-version = "0.1.0"
-dependencies = [
- "rgeom",
-]
-
-[[package]]
-name = "io"
-version = "0.1.0"
-
-[[package]]
 name = "rgeom"
 version = "0.1.0"
-dependencies = [
- "io",
-]
