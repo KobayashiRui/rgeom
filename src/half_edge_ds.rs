@@ -40,6 +40,13 @@ impl HalfEdgeDS {
         return Some([v1, v2])
     }
 
+    pub fn get_edge_key(&self, key: &[usize; 2])-> [&Vertex; 2]{
+        let he1 = self.get(key).unwrap();
+        let he2 = self.get(&he1.prev.unwrap()).unwrap();
+
+        return [&self.vertex[he2.opposite.unwrap()], &self.vertex[he1.opposite.unwrap()]]
+    }
+
     pub fn add_vertex(&mut self, x: f32, y: f32, z:f32, half_edge: Option<[usize; 2]>)-> usize{
         self.vertex.push(
             Vertex{x,y,z,half_edge}
@@ -87,16 +94,42 @@ impl HalfEdgeDS {
         return [v1, v2, v3];
     }
 
+    pub fn get_face_loop_index(&self, face_index: usize) -> [usize; 3]{
+        let he_1 = self.get(&self.face[face_index].half_edge.unwrap()).unwrap();
+        let he_2 = self.get(&he_1.next.unwrap()).unwrap();
+        let he_3 = self.get(&he_2.next.unwrap()).unwrap();
+
+        let v1_i = he_1.opposite.unwrap();
+        let v2_i = he_2.opposite.unwrap();
+        let v3_i = he_3.opposite.unwrap();
+
+        return [v1_i, v2_i, v3_i];
+    }
+
+    pub fn get_face_loop_he(&self, face_index: usize) -> [[usize; 2]; 3]{
+        let he1_key = self.face[face_index].half_edge.unwrap();
+        let he1 = self.get(&he1_key).unwrap();
+
+        let he2_key = he1.next.unwrap();
+        let he2 = self.get(&he2_key).unwrap();
+
+        let he3_key = he2.next.unwrap();
+        //let he3 = self.get(&he3_key).unwrap();
+
+        return [he1_key, he2_key, he3_key];
+    }
+
+
 
 
 }
 
 #[derive(Debug)]
 pub struct Vertex {
-    x: f32,
-    y: f32,
-    z: f32,
-    half_edge: Option<[usize; 2]> 
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub half_edge: Option<[usize; 2]> 
 }
 
 #[derive(Debug)]
@@ -106,11 +139,11 @@ pub struct Face {
 
 #[derive(Debug)]
 pub struct HalfEdge {
-    opposite: Option<usize>,    //エッジ先端のvertexのindex
-    face: Option<usize>,        //faceのindex
-    twin: Option<[usize; 2]>,   //反対のhalfedgeのkey
-    next: Option<[usize; 2]>,   //次のhalfedgeのkey
-    prev: Option<[usize; 2]>,   //前のhalfedgeのkey
+    pub opposite: Option<usize>,    //エッジ先端のvertexのindex
+    pub face: Option<usize>,        //faceのindex
+    pub twin: Option<[usize; 2]>,   //反対のhalfedgeのkey
+    pub next: Option<[usize; 2]>,   //次のhalfedgeのkey
+    pub prev: Option<[usize; 2]>,   //前のhalfedgeのkey
 }
 
 impl HalfEdge {
