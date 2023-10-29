@@ -13,8 +13,12 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Vec<[f32;3]>{
     }
 
     println!("cross faces: {:?}", slice_face);
-    //最初のクロスするエッジを探す
     let mut slice_segment: Vec<[f32;3]> = Vec::new();
+
+    if slice_face.len() == 0 {
+        return slice_segment;
+    }
+    //最初のクロスするエッジを探す
     let mut lived_face: Vec<usize> = Vec::new();
 
     let mut now_he: Option<[usize;2]> = None;
