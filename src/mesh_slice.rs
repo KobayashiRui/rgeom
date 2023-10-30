@@ -25,17 +25,20 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Vec<[f32;3]>{
 
     let mut get_init_edge = || {
         for i in 0..slice_face.len(){
-            println!("face: {:?}", slice_face[i]);
+            //println!("face: {:?}", slice_face[i]);
+            if lived_face.contains(&slice_face[i]) {continue;}
+
             let he_key_list = he_ds.get_face_loop_he(slice_face[i]);
             for hek in he_key_list {
                 //twinのエッジのfaceが対象に入っているか確認
                 let he = he_ds.get(&hek).unwrap();
                 let he_twin_face = he_ds.get(&he.twin.unwrap()).unwrap().face.unwrap();
                 if !slice_face.contains(&he_twin_face) {continue;}
+                if lived_face.contains(&he_twin_face) {continue;}
 
                 let e = he_ds.get_edge_key(&hek);
                 let cross_p = get_edge_cross_point(e, plane);
-                println!("cross edge: {:?}", cross_p);
+                //println!("cross edge: {:?}", cross_p);
                 if cross_p.is_some() {
                     lived_face.push(slice_face[i]);
                     slice_segment.push(cross_p.unwrap());
@@ -52,32 +55,34 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Vec<[f32;3]>{
     //TODO: 一周するまでループする;
     //while slice_face.len() >= slice_segment.len() {
     loop {
-        println!("sf: {:?}, lf: {:?}", slice_face.len(), lived_face.len());
+        //println!("sf: {:?}, lf: {:?}", slice_face.len(), lived_face.len());
         let old_he = he_ds.get(&now_he.unwrap()).unwrap();
         let he_twin_key = old_he.twin.unwrap();
         let he_twin = he_ds.get(&he_twin_key).unwrap();
         
         let fi = he_twin.face.unwrap();
-        println!("face: {:?}", fi);
+        //println!("face: {:?}", fi);
 
         lived_face.push(fi);
         
         let he_key_list = he_ds.get_face_loop_he(fi);
         let mut count = 0;
-        println!("len: {:?}", he_key_list.len());
+        //println!("len: {:?}", he_key_list.len());
         for hek in he_key_list {
             println!("count: {:?}", count);
             count += 1;
             if hek == he_twin_key {continue} ;
             let he = he_ds.get(&hek).unwrap();
             let he_twin_face = he_ds.get(&he.twin.unwrap()).unwrap().face.unwrap();
-            println!("twinface: {:?}", he_twin_face);
+            //このfaceがloopの最初と一致するかチェックする
+
+            //println!("twinface: {:?}", he_twin_face);
             if !slice_face.contains(&he_twin_face) {continue;}
             if lived_face.contains(&he_twin_face) {continue;}
 
             let e = he_ds.get_edge_key(&hek);
             let cross_p = get_edge_cross_point(e, plane);
-            println!("cross edge: {:?}", cross_p);
+            //println!("cross edge: {:?}", cross_p);
             if cross_p.is_some() {
                 slice_segment.push(cross_p.unwrap());
                 now_he = Some(hek);
