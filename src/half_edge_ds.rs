@@ -47,6 +47,13 @@ impl HalfEdgeDS {
         return [&self.vertex[he2.opposite.unwrap()], &self.vertex[he1.opposite.unwrap()]]
     }
 
+    pub fn get_edge_vertex_index(&self, key: &[usize; 2])-> [usize; 2]{
+        let he1 = self.get(key).unwrap();
+        let he2 = self.get(&he1.prev.unwrap()).unwrap();
+
+        return [he2.opposite.unwrap(), he1.opposite.unwrap()]
+    }
+
     pub fn add_vertex(&mut self, x: f32, y: f32, z:f32, half_edge: Option<[usize; 2]>)-> usize{
         self.vertex.push(
             Vertex{x,y,z,half_edge}
@@ -65,6 +72,10 @@ impl HalfEdgeDS {
         let v1_i = face_loop[0]; 
         let v2_i = face_loop[1]; 
         let v3_i = face_loop[2]; 
+
+        if v1_i == v2_i || v2_i == v3_i || v3_i == v1_i {
+            return;
+        }
         let ds_fi = self.add_face(Some([v1_i, v2_i]));
 
         //TODO: twinを追加する?
@@ -120,6 +131,21 @@ impl HalfEdgeDS {
     }
 
 
+    pub fn get_vertex_face_loop(&self, vertex_index: usize) -> Vec<usize>{
+        //このvertexのハーフエッジを取得
+        let mut face_list: Vec<usize> = Vec::new();
+        let init_hek = self.vertex[vertex_index].half_edge.unwrap();
+        let mut now_he = self.half_edge.get(&init_hek).unwrap();
+        face_list.push(now_he.face.unwrap());
+        
+        let mut now_key = self.half_edge.get(&now_he.next.unwrap()).unwrap().twin.unwrap();
+        while init_hek != now_key {
+            now_he = self.half_edge.get(&now_key).unwrap();
+            face_list.push(now_he.face.unwrap());
+            now_key = self.half_edge.get(&now_he.next.unwrap()).unwrap().twin.unwrap();
+        }
+        return face_list
+    }
 
 
 }
