@@ -7,11 +7,11 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Option<Vec<Vec<[f32;3]>>>{
     for fi in 0..he_ds.face.len(){
         //let face_v_loop = he_ds.get_face_loop(fi);
         let fv = he_ds.get_face_loop(fi);
-        let (cross_triangle , on_p) = cross_triangle_plane(fv, plane);
+        let (cross_triangle , on_vertex) = cross_triangle_plane(fv, plane);
+        if on_vertex {
+            //println!("on_vertex: f:{:?}", fi);
+        }
         if  cross_triangle{
-            if on_p {
-                println!("on plane: f:{:?}", fi)
-            }
             slice_face.push(fi);
         }
     }
@@ -22,20 +22,16 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Option<Vec<Vec<[f32;3]>>>{
     while slice_face.len() != 0 {
 
         let mut slice_segment: Vec<[f32;3]> = Vec::new();
-        //if slice_face.len() == 0 {
-        //    return slice_segment;
-        //}
 
         let mut lived_face: Vec<usize> = Vec::new(); //通過したface
 
-        let mut now_he: Option<[usize;2]> = None;
         let mut search_faces: Vec<usize> = vec![slice_face[0]];
 
         let mut segment_end_flag = false;
         while !segment_end_flag {
             segment_end_flag = true;
-            println!("Search faces {:?}", search_faces);
-            println!("Search lived faces {:?}", lived_face);
+            //println!("Search faces {:?}", search_faces);
+            //println!("Search lived faces {:?}", lived_face);
             for sfi in 0..search_faces.len() {
                 let mut end_flag = false;
                 //faceの周りのfaceを取得する
@@ -45,7 +41,8 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Option<Vec<Vec<[f32;3]>>>{
                 for hek in he_key_list {
                     let he = he_ds.get(&hek).unwrap();
                     let he_twin_face = he_ds.get(&he.twin.unwrap()).unwrap().face.unwrap();
-                    println!("F: {:?}", he_twin_face);
+
+                    //println!("F: {:?}", he_twin_face);
 
                     //スライス対象のfaceでない場合はスキップ
                     if !slice_face.contains(&he_twin_face) {continue;}
@@ -66,9 +63,8 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Option<Vec<Vec<[f32;3]>>>{
                             slice_segment.push(cross_p.unwrap());
                             lived_face.extend(search_faces.clone());
                             let on_vertex_index = if on_vertex.unwrap() == 0.0 { ei[0] } else { ei[1] };
-                            println!("ON Vertex");
                             let mut _search_faces = he_ds.get_vertex_face_loop(on_vertex_index).clone();
-                            println!("sf:{:?}", _search_faces);
+                            _search_faces.retain(|&f| slice_face.contains(&f));
                             _search_faces.retain(|&f| !lived_face.contains(&f));
                             search_faces = _search_faces;
                             end_flag = true;
@@ -89,10 +85,10 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Option<Vec<Vec<[f32;3]>>>{
             }
 
             if segment_end_flag {
-                println!("探索完了");
-                println!("END Search faces {:?}", search_faces);
-                println!("END Search lived faces {:?}", lived_face);
-                println!("slice_face: {:?}", slice_face);
+
+                //println!("END Search faces {:?}", search_faces);
+                //println!("END Search lived faces {:?}", lived_face);
+                //println!("slice_face {:?}", slice_face);
 
                 for sfi in 0..search_faces.len() {
                     let mut end_flag = false;
@@ -102,8 +98,9 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Option<Vec<Vec<[f32;3]>>>{
                     for hek in he_key_list {
                         let he = he_ds.get(&hek).unwrap();
                         let he_twin_face = he_ds.get(&he.twin.unwrap()).unwrap().face.unwrap();
-                        println!("F: {:?}", he_twin_face);
-                        if lived_face[0] != he_twin_face {continue;}
+                        //println!("F: {:?}", he_twin_face);
+                        //if lived_face[0] != he_twin_face {continue;}
+                        if  !lived_face.contains(&he_twin_face) {continue;}
 
 
                         //交点を求める
@@ -133,10 +130,9 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Option<Vec<Vec<[f32;3]>>>{
                         break;
                     }
                 }
-                //println!("END Search faces {:?}", search_faces);
-                //println!("END Search lived faces {:?}", lived_face);
-                println!("")
+                println!("Finish Search lived faces {:?}", lived_face);
             }
+
         }
 
         if lived_face.len() == 0 {
@@ -148,113 +144,12 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Option<Vec<Vec<[f32;3]>>>{
 
         slice_face.retain(|&f| !lived_face.contains(&f));
 
-        //println!("lived_face: {:?}\n slice_face: {:?}",lived_face, slice_face);
-
-
-
-        //let (init_f, init_p, init_hek) = get_init_edge(&slice_face, &he_ds, plane);
-        //lived_face.push(init_f.unwrap());
-        //slice_segment.push(init_p.unwrap());
-        //now_he = init_hek;
-
-        //faceがなくなるまでループする;
-        //TODO: 一周するまでループする;
-        //while slice_face.len() >= slice_segment.len() {
-        /*
-        loop {
-            //println!("sf: {:?}, lf: {:?}", slice_face.len(), lived_face.len());
-            let old_he = he_ds.get(&now_he.unwrap()).unwrap();
-            let he_twin_key = old_he.twin.unwrap();
-            let he_twin = he_ds.get(&he_twin_key).unwrap();
-
-            let fi = he_twin.face.unwrap();
-
-            lived_face.push(fi);
-            println!("now face: {:?}", fi);
-
-            let he_key_list = he_ds.get_face_loop_he(fi);
-            let mut count = 0;
-            for hek in he_key_list {
-                count += 1;
-                println!("count: {:?}", count);
-                if hek == he_twin_key {continue} ;
-                let he = he_ds.get(&hek).unwrap();
-                let he_twin_face = he_ds.get(&he.twin.unwrap()).unwrap().face.unwrap();
-                //このfaceがloopの最初と一致するかチェックする
-                println!("twin: {:?}", he_twin_face);
-
-                if !slice_face.contains(&he_twin_face) {continue;}
-                if lived_face.len() > 3 && lived_face[0] == he_twin_face {
-                    count = 5;
-                    now_he = None;
-                    break;
-                }
-
-                if lived_face.contains(&he_twin_face) {continue;}
-
-                let e = he_ds.get_edge_key(&hek);
-                let (cross_p, on_vertex) = get_edge_cross_point(e, plane);
-                //頂点の場合はその頂点の周囲の面を
-                //println!("cross edge: {:?}", cross_p);
-                if cross_p.is_some() {
-                    slice_segment.push(cross_p.unwrap());
-                    now_he = Some(hek);
-                    count = -1;
-                    break;
-                }
-            }
-            if count == 3 {
-                println!("ERROR");
-                break;
-            }
-            if count >= 5 {
-                break;
-            }
-        }
-        */
-
-        //slice_segment.push( slice_segment[0]);
-        //println!("slice_segment: {:?}", slice_segment);
-
     }
 
     return Some(slice_segment_list);
 
     //交差するfaceの中でまだ線分を計算してないものがある場合
 }
-
-//開始のエッジを見つける
-/*
-pub fn get_init_edge(slice_face: &Vec<usize>, he_ds: &HalfEdgeDS, plane: &Plane)-> (Option<usize>, Option<[f32;3]>, Option<[usize;2]>) {
-    for i in 0..slice_face.len(){
-        //println!("face: {:?}", slice_face[i]);
-        //if lived_face.contains(&slice_face[i]) {continue;}
-
-        let he_key_list = he_ds.get_face_loop_he(slice_face[i]);
-        for hek in he_key_list {
-            //twinのエッジのfaceが対象に入っているか確認
-            let he = he_ds.get(&hek).unwrap();
-            let he_twin_face = he_ds.get(&he.twin.unwrap()).unwrap().face.unwrap();
-            if !slice_face.contains(&he_twin_face) {
-
-                continue;
-            }
-            //if lived_face.contains(&he_twin_face) {continue;}
-
-            let e = he_ds.get_edge_key(&hek);
-            let cross_p = get_edge_cross_point(e, plane);
-            //println!("cross edge: {:?}", cross_p);
-            if cross_p.is_some() {
-                //lived_face.push(slice_face[i]);
-                //slice_segment.push(cross_p.unwrap());
-                //now_he = Some(hek);
-                return (Some(slice_face[i]), cross_p, Some(hek));
-            }
-        }
-    }
-    return (None, None, None);
-}
-*/
 
 pub fn cross_triangle_plane(fv: [&Vertex; 3], plane: &Plane) -> (bool, bool){
     //face
@@ -301,7 +196,6 @@ pub fn get_edge_cross_point(e: [&Vertex; 2], plane: &Plane)-> (Option<[f32; 3]>,
         e[1].z - e[0].z);
     let bottom = pn.dot(&b_a);
     if bottom == 0.0 {
-        println!("ON Plane");
         return (None, None);
     }else {
         let p0_a = na::Vector3::new(
@@ -311,7 +205,7 @@ pub fn get_edge_cross_point(e: [&Vertex; 2], plane: &Plane)-> (Option<[f32; 3]>,
         );
         let top = pn.dot(&p0_a);
         let t = top / bottom;
-        println!("t:{:?}", t);
+        //println!("t:{:?}", t);
         if t < 0.0 || t > 1.0 {
             return (None, None);
         }
@@ -327,7 +221,3 @@ pub fn get_edge_cross_point(e: [&Vertex; 2], plane: &Plane)-> (Option<[f32; 3]>,
         return (Some([new_p.x, new_p.y, new_p.z]), on_vertex);
     }
 }
-
-//線分と平面の交点を求める
-//pub fn cross_segment_plane() -> bool {
-//}
