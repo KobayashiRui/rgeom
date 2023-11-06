@@ -86,14 +86,27 @@ pub fn slice(he_ds: &HalfEdgeDS, plane: &Plane)-> Option<Vec<Vec<[f32;3]>>>{
 
             if segment_end_flag {
 
-                //println!("END Search faces {:?}", search_faces);
-                //println!("END Search lived faces {:?}", lived_face);
-                //println!("slice_face {:?}", slice_face);
+                println!("END Search faces {:?}", search_faces);
+                println!("END Search lived faces {:?}", lived_face);
+                println!("slice_face {:?}", slice_face);
 
+                //TODO: 要改善
+                //最後が頂点だった場合に現在の実装だとうまくいかない
+                //一回すべての候補頂点を出して、なるべくlivedが若いものを優先するようにする
                 for sfi in 0..search_faces.len() {
                     let mut end_flag = false;
                     //faceの周りのfaceを取得する
-                    let he_key_list = he_ds.get_face_loop_he(search_faces[sfi]);
+                    let mut he_key_list = he_ds.get_face_loop_he(search_faces[sfi]);
+                    //face位置によって並び替える
+                    println!("search face: {:?}", search_faces[sfi]);
+                    println!("lived_face: {:?}", lived_face);
+                    println!("before sort: {:?}", he_key_list);
+                    he_key_list.sort_by(|a, b| {
+                        let priority_of_a = lived_face.iter().position(|&p| p == he_ds.half_edge.get(&he_ds.half_edge.get(a).unwrap().twin.unwrap()).unwrap().face.unwrap()).unwrap_or(usize::MAX);
+                        let priority_of_b = lived_face.iter().position(|&p| p == he_ds.half_edge.get(&he_ds.half_edge.get(b).unwrap().twin.unwrap()).unwrap().face.unwrap()).unwrap_or(usize::MAX);
+                        priority_of_a.cmp(&priority_of_b)
+                    });
+                    println!("after sort: {:?}", he_key_list);
 
                     for hek in he_key_list {
                         let he = he_ds.get(&hek).unwrap();
