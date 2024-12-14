@@ -14,6 +14,11 @@ pub struct Vertex {
     pub edge: Option<HalfEdgeID>
 }
 
+pub struct Edge {
+    pub start_vertex: na::Vector3<f32>,
+    pub end_vertex: na::Vector3<f32>,
+}
+
 // ハーフエッジ構造体
 // vertex = end vertex,
 // edge = he.prev.vertex -> he.vertex
@@ -215,4 +220,24 @@ impl<'a> HalfEdgeHandler<'a> {
         })?;
         Ok(vertex)
     }
+
+    pub fn edge(&self) -> HalfEdgeResult<'a, Edge> {
+        let he = self.half_edge_ds.get_half_edge(self.he_id)?;
+        let end_vertex = self.half_edge_ds.vertices.get(&he.vertex).ok_or_else(|| HalfEdgeError{
+            message: format!("Not found vertex")
+        })?;
+
+        let prev_id = self.half_edge_ds.prev_half_edge_id(self.he_id)?;
+        let prev_he = self.half_edge_ds.get_half_edge(prev_id)?;
+        let start_vertex = self.half_edge_ds.vertices.get(&prev_he.vertex).ok_or_else(|| HalfEdgeError {
+            message: format!("Not found vertex")
+        })?;
+
+        let start_vec = na::Vector3::new(start_vertex.position[0], start_vertex.position[1], start_vertex.position[2]);
+        let end_vec = na::Vector3::new(end_vertex.position[0], end_vertex.position[1], end_vertex.position[2]);
+
+        let edge = Edge{start_vertex: start_vec, end_vertex: end_vec};
+        Ok(edge)
+    }
+
 }
