@@ -32,6 +32,8 @@ fn calc_intersectiong_edge(edge: &Edge, plane: &Plane) -> Option<na::Vector3<f32
     return Some(intersection);
 }
 
+/// 平面とエッジとの交点を求める
+/// 交差するエッジのハーフエッジIDと交点の情報を返す
 fn find_intersectiong_edges(he_ds: &HalfEdgeDS, plane:&Plane) -> Vec<IntersectionInfo>{
     let mut intersections = Vec::new();
     for (he_id, he) in &he_ds.half_edges {
@@ -49,6 +51,7 @@ fn find_intersectiong_edges(he_ds: &HalfEdgeDS, plane:&Plane) -> Vec<Intersectio
     return intersections;
 }
 
+/// 輪郭線をDFSで作成する
 fn extract_contours(he_ds: &HalfEdgeDS, intersections: Vec<IntersectionInfo>){
 
 }
